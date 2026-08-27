@@ -1,0 +1,40 @@
+name: Publish validated FragmentMove artifact
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/update-static.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download validated private artifact
+        run: |
+          curl --fail --location --retry 3 \
+            'https://sdmntprnznorth.oaiusercontent.com/files/00000000-e780-820b-815f-2c38a533d599/raw?se=2026-08-27T12%3A43%3A02Z&sp=r&sv=2026-02-06&sr=b&scid=d3b41513-2812-5aa2-bda4-2518c80f8eb9&skoid=f5e14fda-2af7-44a3-9d18-d372ffcad871&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-27T03%3A35%3A25Z&ske=2026-08-28T03%3A35%3A25Z&sks=b&skv=2026-02-06&sig=u7OZooxy7OMDR0%2BRBweaqy8Sp9C2nY3i7YDgnur1Lx8%3D' \
+            --output "$RUNNER_TEMP/site.zip"
+          mkdir -p "$RUNNER_TEMP/site"
+          unzip -q "$RUNNER_TEMP/site.zip" -d "$RUNNER_TEMP/site"
+
+      - name: Replace deploy-only tree
+        run: |
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$RUNNER_TEMP/site/." .
+          touch .nojekyll
+
+      - name: Commit validated artifact
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Deploy iOS partial-duration fix"
+          git push origin HEAD:main
