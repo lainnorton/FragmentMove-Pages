@@ -1,0 +1,36 @@
+name: Publish L7 backup build
+
+on:
+  push:
+    paths:
+      - .github/workflows/publish-l7.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Replace branch with validated static artifact
+        env:
+          ARTIFACT_URL: 'https://sdmntprcentralus.oaiusercontent.com/files/00000000-ad9c-81f5-9e94-0ed03547f9c0/raw?se=2026-08-28T07%3A54%3A49Z&sp=r&sv=2026-02-06&sr=b&scid=0fc0848f-69a5-53ba-b6a1-01ab8f38f2f5&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-28T03%3A26%3A07Z&ske=2026-08-29T03%3A26%3A07Z&sks=b&skv=2026-02-06&sig=rV%2BlITExlkqdcisujv%2BD6u//LxeLmENlbeaKeziCsVY%3D'
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 "$ARTIFACT_URL" -o /tmp/fragmentmove-pages.zip
+          rm -rf /tmp/fragmentmove-pages
+          mkdir -p /tmp/fragmentmove-pages
+          unzip -q /tmp/fragmentmove-pages.zip -d /tmp/fragmentmove-pages
+
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/fragmentmove-pages/. .
+          touch .nojekyll
+          rm -rf .github
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Deploy L7 local backup and restore'
+          git push
