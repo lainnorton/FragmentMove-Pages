@@ -1,0 +1,37 @@
+name: Publish L10.2a compact library build
+
+on:
+  push:
+    paths:
+      - .github/workflows/publish-l10-2a.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      ARTIFACT_URL: "https://sdmntprkoreacentral.oaiusercontent.com/files/00000000-f680-8206-bc63-f121773433c0/raw?se=2026-08-28T12%3A20%3A09Z&sp=r&sv=2026-02-06&sr=b&scid=20b52014-2bab-5933-819b-41addd318c0a&skoid=0765b554-4b90-4fa2-9d6d-0055a2427910&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-28T03%3A27%3A33Z&ske=2026-08-29T03%3A27%3A33Z&sks=b&skv=2026-02-06&sig=3UYKU8VpN5NXX/pFgJNWCDGR%2BoBDLjXWTJ9Odw9eK18%3D"
+    steps:
+      - uses: actions/checkout@v6
+      - name: Replace branch with validated static artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location "$ARTIFACT_URL" --output /tmp/fragmentmove-pages.zip
+          rm -rf /tmp/fragmentmove-pages
+          mkdir -p /tmp/fragmentmove-pages
+          unzip -q /tmp/fragmentmove-pages.zip -d /tmp/fragmentmove-pages
+
+          test "$(cat /tmp/fragmentmove-pages/source-commit.txt)" = "67b18a1ac32d3f836924a28a8a6aa917ca540bd3"
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name .github -exec rm -rf {} +
+          cp -a /tmp/fragmentmove-pages/. .
+          touch .nojekyll
+          rm -rf .github
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Deploy L10.2a compact video library"
+          git push
