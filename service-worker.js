@@ -1,9 +1,10 @@
 const CACHE_PREFIX = "fragmentmove-shell-";
-const CACHE_NAME = `${CACHE_PREFIX}v2`;
+const CACHE_NAME = `${CACHE_PREFIX}v3`;
 const SCOPE_URL = new URL(self.registration.scope);
 const scopedUrl = (path = "") => new URL(path, SCOPE_URL).toString();
 const INDEX_URL = scopedUrl("index.html");
 const SEED_URL = scopedUrl("data/seed_videos.json");
+const L10_2B_SEED_URL = scopedUrl("data/seed_videos_l10_2b.json");
 const ASSET_MANIFEST_URL = scopedUrl("asset-manifest.json");
 
 const CORE_SHELL = [
@@ -14,6 +15,7 @@ const CORE_SHELL = [
   scopedUrl("icons/fragmentmove-icon-180.png"),
   scopedUrl("icons/fragmentmove-icon-192.png"),
   SEED_URL,
+  L10_2B_SEED_URL,
   ASSET_MANIFEST_URL,
 ];
 
@@ -103,8 +105,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (url.toString() === SEED_URL) {
-    event.respondWith(networkFirst(request, SEED_URL));
+  if (url.toString() === SEED_URL || url.toString() === L10_2B_SEED_URL) {
+    event.respondWith(networkFirst(request, url.toString()));
     return;
   }
 
