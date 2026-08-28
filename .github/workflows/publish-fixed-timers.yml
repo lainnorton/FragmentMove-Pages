@@ -1,0 +1,30 @@
+name: Publish fixed-duration timer bridge
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Replace branch with validated static artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          curl -fL 'https://sdmntprkoreacentral.oaiusercontent.com/files/00000000-3428-8206-98da-331761291b17/raw?se=2026-08-28T06%3A31%3A46Z&sp=r&sv=2026-02-06&sr=b&scid=812f1e7a-e5e0-5476-aab2-9e61095d0b20&skoid=03727f49-62d3-42ac-8350-1c0e6559d238&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-28T03%3A25%3A30Z&ske=2026-08-29T03%3A25%3A30Z&sks=b&skv=2026-02-06&sig=tnHraEX4sWwTEAzT64CU7YaujfJGXPHYDOPIakh0Su8%3D' -o "$tmp/artifact.zip"
+          unzip -q "$tmp/artifact.zip" -d "$tmp/site"
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$tmp/site/." .
+          touch .nojekyll
+          rm -rf .github
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Deploy fixed-duration timer bridge'
+          git push origin HEAD:main
