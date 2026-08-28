@@ -1,0 +1,32 @@
+name: Publish L8 stabilized build
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-l8.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Replace branch with validated static artifact
+        env:
+          ARTIFACT_URL: 'https://sdmntprwestus2.oaiusercontent.com/files/00000000-f840-81f8-bb73-e74dcd2226b8/raw?se=2026-08-28T08%3A19%3A49Z&sp=r&sv=2026-02-06&sr=b&scid=45c729d3-9d0a-5c5e-bd99-d7d2de9d95a2&skoid=b1bca990-dcac-4c31-8ca1-ac563cf24c54&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-28T03%3A27%3A41Z&ske=2026-08-29T03%3A27%3A41Z&sks=b&skv=2026-02-06&sig=qjCDzrhkgZBiRMQdnGKQrGe2REW0ohDxx2YqaE5KMr4%3D'
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          curl --fail --location "$ARTIFACT_URL" --output "$work/artifact.zip"
+          unzip -q "$work/artifact.zip" -d "$work/dist"
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name .github -exec rm -rf {} +
+          cp -a "$work/dist/." .
+          touch .nojekyll
+          rm -rf .github
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Deploy L8 stabilized local-first UI'
+          git push
