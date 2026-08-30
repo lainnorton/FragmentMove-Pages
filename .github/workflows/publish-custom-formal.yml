@@ -1,0 +1,32 @@
+name: Publish formal custom micro moves
+
+on:
+  push:
+    paths:
+      - .github/workflows/publish-custom-formal.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Replace branch with validated static artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail 'https://sdmntprseasia.oaiusercontent.com/files/00000000-9350-8207-b124-23a8d2fc6c97/raw?se=2026-08-30T12%3A09%3A12Z&sp=r&sv=2026-02-06&sr=b&scid=1344e0a2-eaea-578c-ba0d-54727881b98c&skoid=6980ab1e-b994-4668-84de-ad0444c9d08b&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-30T02%3A38%3A34Z&ske=2026-08-31T02%3A38%3A34Z&sks=b&skv=2026-02-06&sig=zPuVnpQTekV/333bs6qn1NQTxD0uC3KWP/iQ2HKSfMo%3D' -o /tmp/fragmentmove.zip
+          rm -rf /tmp/fragmentmove-dist
+          mkdir -p /tmp/fragmentmove-dist
+          unzip -q /tmp/fragmentmove.zip -d /tmp/fragmentmove-dist
+          test "$(tr -d '\r\n' < /tmp/fragmentmove-dist/source-commit.txt)" = "4ce1da472057414504eb428a9914d6779113a876"
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a /tmp/fragmentmove-dist/. .
+          touch .nojekyll
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Deploy formal custom micro recommendations'
+          git push
